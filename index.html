@@ -1,0 +1,998 @@
+               <!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GASIMA AI - CYBER CORE SYSTEM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030303;
+            color: #e4e4e7;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #bg-video, #loader-video {
+            position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%;
+            width: auto; height: auto; z-index: -10; object-fit: cover; opacity: 0.55;
+            filter: contrast(110%) brightness(70%);
+        }
+        #loader-video { opacity: 0.85; filter: contrast(115%) brightness(80%); }
+
+        .glass-panel {
+            background: rgba(10, 10, 12, 0.82);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.95);
+        }
+
+        .chat-container { flex: 1 1 0%; overflow-y: auto !important; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+        .floating-footer {
+            position: fixed; bottom: 0; left: 0; width: 100%; z-index: 40; padding-left: 1rem; padding-right: 1rem;
+            padding-top: 0.75rem; padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 80%, rgba(0,0,0,0) 100%);
+        }
+        .neon-glow { box-shadow: 0 0 35px rgba(255, 255, 255, 0.06), inset 0 0 15px rgba(255, 255, 255, 0.03); }
+        .neon-text { text-shadow: 0 0 15px rgba(255, 255, 255, 0.6), 0 0 30px rgba(255, 255, 255, 0.2); }
+        .pulse-ring { border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 50%; height: 100px; width: 100px; position: absolute; animation: pulsate 2s ease-out infinite; opacity: 0; }
+        @keyframes pulsate { 0% { transform: scale(0.5, 0.5); opacity: 0.0; } 50% { opacity: 0.8; } 100% { transform: scale(1.3, 1.3); opacity: 0.0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        .animate-fade-in { animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        .bar { width: 2.5px; height: 3px; background-color: #ffffff; transition: all 0.2s ease; }
+        .playing .bar { animation: bounce 0.5s ease infinite alternate; }
+        .playing .bar:nth-child(2) { animation-delay: 0.1s; }
+        .playing .bar:nth-child(3) { animation-delay: 0.2s; }
+        .playing .bar:nth-child(4) { animation-delay: 0.3s; }
+        @keyframes bounce { from { height: 3px; } to { height: 15px; } }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex flex-col h-screen w-screen justify-between p-0 m-0 relative select-none">
+    
+    <!-- Preloader System -->
+    <div id="preloader" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black transition-all duration-700">
+        <video autoplay loop muted playsinline id="loader-video"><source src="loading.mp4" type="video/mp4"></video>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/80 to-black z-0"></div>
+        <div class="z-10 flex flex-col items-center gap-7 px-6 text-center max-w-sm">
+            <div class="relative w-24 h-24 flex items-center justify-center">
+                <div class="pulse-ring"></div>
+                <div class="absolute inset-0 rounded-full border-2 border-t-white border-r-zinc-800 border-b-zinc-900 border-l-zinc-700 animate-spin" style="animation-duration: 0.7s;"></div>
+                <img id="loaderPfp" src="pfp1.jpeg" alt="GASIMA" class="w-12 h-12 rounded-full object-cover shadow-lg border border-white/20 animate-pulse">
+            </div>
+            <div>
+                <h2 class="text-2xl font-black tracking-[0.3em] text-white uppercase neon-text">GASIMA AI</h2>
+                <p class="text-[9px] text-zinc-500 font-bold tracking-widest uppercase mt-1.5">CYBER CORE SYSTEM INITIALIZING...</p>
+            </div>
+            <div class="w-56 h-[3px] bg-zinc-950 rounded-full overflow-hidden border border-zinc-900">
+                <div id="preload-progress" class="h-full bg-white transition-all duration-200 w-0"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Video -->
+    <video autoplay loop muted playsinline id="bg-video"><source src="chat1.mp4" type="video/mp4"></video>
+
+    <!-- Header System -->
+    <header class="glass-panel w-full px-4 py-3 flex items-center justify-between shadow-lg z-50 shrink-0 border-b relative">
+        <div class="flex items-center gap-3">
+            <img id="headerPfp" src="pfp1.jpeg" alt="GASIMA AI" class="w-8 h-8 rounded-full object-cover border border-white/30 shadow-md">
+            <div>
+                <h1 class="text-xs font-black tracking-widest text-white neon-text uppercase">GASIMA AI</h1>
+                <p class="text-[8px] text-zinc-400 font-mono tracking-wider uppercase font-bold">BY IKIYGASIMA</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <!-- Custom Model Selector Trigger Button -->
+            <button id="openModelModalBtn" onclick="openModelFrame()" class="bg-black/90 border border-zinc-800 hover:border-zinc-500 text-zinc-200 text-[9px] rounded-xl px-3 py-1.5 uppercase font-black tracking-wider flex items-center gap-2 shadow-sm transition-all active:scale-95">
+                <span id="currentModelLabel">ASISTEN.2</span>
+                <i class="fa-solid fa-chevron-down text-[8px] text-zinc-500"></i>
+            </button>
+            
+            <button id="dashboardMenuBtn" class="text-white hover:text-zinc-400 p-2 transition-all text-xs flex items-center gap-1.5 active:scale-95 border border-zinc-800 bg-black/80 rounded-xl px-3 shadow-sm">
+                <i class="fa-solid fa-bars text-[11px]"></i>
+            </button>
+            
+            <!-- Dashboard Dropdown Menu -->
+            <div id="dashboardDropdown" class="absolute top-12 right-4 bg-zinc-950/95 backdrop-blur-md rounded-2xl p-3 flex flex-col gap-1.5 hidden z-50 border border-zinc-800 shadow-2xl w-64 animate-fade-in">
+                <div class="px-2 py-1 text-[9px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-900 flex items-center justify-between">
+                    <span>RIWAYAT OBROLAN</span>
+                    <button onclick="clearAllChatSessions()" class="text-rose-400 hover:text-rose-300 text-[8px] font-bold uppercase underline">Clear Semua</button>
+                </div>
+                
+                <!-- List Session Chat -->
+                <div id="sessionChatList" class="flex flex-col gap-1 max-h-36 overflow-y-auto pr-1 my-1"></div>
+                
+                <button type="button" onclick="createNewChatSession()" class="flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] bg-zinc-900 border border-zinc-800 text-white font-bold transition-all text-left hover:bg-zinc-800">
+                    <i class="fa-solid fa-square-plus text-green-400"></i> <span>Buat Obrolan Baru</span>
+                </button>
+
+                <div class="h-[1px] bg-zinc-900 my-1"></div>
+
+                <!-- Menu Dukung Kami (QRIS) -->
+                <button type="button" onclick="openDonateModal()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-amber-400 hover:bg-amber-950/30 text-left transition-all font-bold">
+                    <i class="fa-solid fa-qrcode text-amber-400"></i> <span>Dukung Kami (QRIS)</span>
+                </button>
+                
+                <button type="button" onclick="openDiscordFrame()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-indigo-400 hover:bg-indigo-950/40 text-left transition-all font-bold">
+                    <i class="fa-brands fa-discord"></i> <span>Komunitas Discord</span>
+                </button>
+                
+                <a href="https://webstoreigs.github.io/GASIMA-STORE/#etalase_sec" target="_blank" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs hover:bg-zinc-900/60 text-left text-zinc-300 font-bold">
+                    <i class="fa-solid fa-store text-yellow-500"></i> <span>Etalase Produk</span>
+                </a>
+                
+                <div class="h-[1px] bg-zinc-900 my-1"></div>
+                
+                <button type="button" onclick="clearCurrentChat()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs hover:bg-red-950/30 text-left transition-all text-red-400 font-bold">
+                    <i class="fa-solid fa-trash-can"></i> <span>Bersihkan Chat Ini</span>
+                </button>
+                
+                <div class="px-3 py-2 text-[9px] font-bold text-zinc-400 uppercase tracking-widest border-t border-zinc-900 mt-1 flex items-center justify-center gap-2 bg-black/50 rounded-lg">
+                    <i class="fa-solid fa-headset text-blue-400"></i> CS: 082190691751
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Modal Dukung Kami (QRIS) -->
+    <div id="donateModal" class="fixed inset-0 z-[95] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden">
+        <div class="bg-zinc-950 w-full max-w-xs rounded-3xl p-5 shadow-2xl border border-zinc-800 text-center relative animate-fade-in flex flex-col items-center">
+            <div class="flex items-center justify-between w-full border-b border-zinc-900 pb-2 mb-3">
+                <h3 class="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-heart text-rose-500"></i> DUKUNG KAMI
+                </h3>
+                <button type="button" onclick="closeDonateModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-[10px] text-zinc-400 mb-3">Scan QRIS di bawah ini untuk mendukung pengembangan GASIMA AI Cyber System.</p>
+            
+            <div class="bg-white p-3 rounded-2xl border border-zinc-700 shadow-inner mb-4">
+                <img id="qrisImage" src="qrs.jpeg" alt="QRIS Dukung Kami" class="w-48 h-48 object-contain rounded-lg">
+            </div>
+
+            <button type="button" onclick="downloadDirectImage('qrs.jpeg', 'QRIS_Dukung_Gasima.jpeg')" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-black text-xs py-3 rounded-xl tracking-wider uppercase shadow-md active:scale-95 transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-download"></i> <span>Download QRIS</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Model Frame Selector -->
+    <div id="modelFrameModal" class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+        <div class="bg-zinc-950 w-full max-w-xs rounded-3xl p-5 shadow-2xl border border-zinc-800 relative animate-fade-in flex flex-col gap-3">
+            <div class="flex items-center justify-between border-b border-zinc-900 pb-3">
+                <h3 class="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                    <i class="fa-solid fa-microchip text-blue-400"></i> PILIH AI MODEL
+                </h3>
+                <button type="button" onclick="closeModelFrame()" class="text-zinc-500 hover:text-white transition-colors"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="modelOptionsContainer" class="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-1"></div>
+        </div>
+    </div>
+
+    <!-- Floating Audio Control Player & Scroll Toggle Buttons -->
+    <div class="fixed top-16 right-4 z-40 flex flex-col gap-2 items-end pointer-events-auto">
+        <button id="bgmToggleBtn" onclick="toggleAudioPlay()" class="glass-panel px-3 py-2 rounded-2xl flex items-center gap-2.5 border border-zinc-800 text-[10px] font-mono text-zinc-300 shadow-2xl active:scale-95 transition-all hover:bg-zinc-900/80">
+            <i id="bgmIcon" class="fa-solid fa-play text-white"></i>
+            <span id="bgmStatusText" class="font-bold tracking-wider text-[9px] uppercase">BGM OFF</span>
+            <div id="visualizer" class="flex items-end gap-[2px] h-3.5 w-4 ml-1">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+        </button>
+
+        <div class="flex gap-1.5">
+            <button onclick="scrollToTop()" title="Scroll ke Atas" class="glass-panel w-8 h-8 rounded-xl flex items-center justify-center text-white border border-zinc-800 active:scale-90 transition-all hover:bg-zinc-800">
+                <i class="fa-solid fa-arrow-up text-xs"></i>
+            </button>
+            <button onclick="scrollToBottom()" title="Scroll ke Bawah" class="glass-panel w-8 h-8 rounded-xl flex items-center justify-center text-white border border-zinc-800 active:scale-90 transition-all hover:bg-zinc-800">
+                <i class="fa-solid fa-arrow-down text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Discord Modal Frame -->
+    <div id="discordFrameModal" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+        <div class="bg-zinc-950 w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-zinc-800 text-center relative animate-fade-in">
+            <i class="fa-brands fa-discord text-indigo-400 text-5xl mb-3 drop-shadow-[0_0_15px_rgba(129,140,248,0.4)]"></i>
+            <h4 class="text-sm font-black text-white uppercase tracking-wider">Join Server GASIMA</h4>
+            <p class="text-[10px] text-zinc-400 mb-4 mt-1">Tambahkan teman secara manual untuk masuk ke jaringan privat kami.</p>
+            <div class="bg-black border border-zinc-900 rounded-xl p-3 flex items-center justify-between gap-2 mb-4">
+                <span id="discordTextId" class="text-xs font-mono font-bold text-white tracking-widest select-all">ikiyxsdd</span>
+                <button type="button" onclick="copyDiscordId()" class="bg-indigo-600 text-white font-black text-[10px] px-3 py-1.5 rounded-lg uppercase tracking-wide transition-all active:scale-90 flex items-center gap-1"><i class="fa-solid fa-copy"></i> Salin</button>
+            </div>
+            <button type="button" onclick="closeDiscordFrame()" class="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white text-[11px] py-2.5 rounded-xl uppercase tracking-wider font-bold transition-all active:scale-95">Tutup Jendela</button>
+        </div>
+    </div>
+
+    <!-- Plugin Frame Modal -->
+    <div id="pluginFrameModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+        <div class="bg-zinc-950 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-zinc-800 relative animate-fade-in flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-zinc-900 pb-3">
+                <h3 id="pluginModalTitle" class="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                    <i class="fa-solid fa-puzzle-piece text-blue-400"></i> PLUGIN SETTINGS
+                </h3>
+                <button type="button" onclick="closePluginFrame()" class="text-zinc-500 hover:text-white transition-colors"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div id="pluginInputsContainer" class="flex flex-col gap-3"></div>
+            
+            <button type="button" onclick="executePluginModal()" class="w-full bg-white text-black font-black text-xs py-3 rounded-xl tracking-wider uppercase shadow-md active:scale-95 transition-all mt-2 flex items-center justify-center gap-2">
+                <span>Jalankan Plugin</span> <i class="fa-solid fa-bolt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 w-full flex flex-col overflow-hidden relative">
+        <div id="chatContainer" class="chat-container px-4 pt-4 pb-48 space-y-4 flex flex-col"></div>
+
+        <!-- Plugins Attach Menu -->
+        <div id="attachMenu" class="fixed bottom-24 left-4 bg-zinc-950/95 backdrop-blur-md rounded-2xl p-2 flex flex-col gap-1 hidden z-50 border border-zinc-800 shadow-2xl w-56 animate-fade-in">
+            <div class="px-3 py-1.5 text-[9px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-900 mb-1">Pilih Ekstensi Plugin</div>
+            <button type="button" onclick="openPluginFrame('fix_code')" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-zinc-900 text-left text-zinc-200"><i class="fa-solid fa-wrench text-blue-400"></i> <span>Auto Fix Code</span></button>
+            <button type="button" onclick="openPluginFrame('quote_win')" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-zinc-900 text-left text-zinc-200"><i class="fa-brands fa-windows text-blue-500"></i> <span>Quote Windows</span></button>
+            <button type="button" onclick="openPluginFrame('quote_iphone')" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-zinc-900 text-left text-zinc-200"><i class="fa-brands fa-apple text-white"></i> <span>Quote iPhone</span></button>
+            <button type="button" onclick="openPluginFrame('quote_bahlil')" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-zinc-900 text-left text-zinc-200"><i class="fa-solid fa-comment-dots text-yellow-400"></i> <span>Quote Bahlil</span></button>
+            <button type="button" onclick="openPluginFrame('img2prompt')" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-zinc-900 text-left text-zinc-200"><i class="fa-solid fa-image text-green-400"></i> <span>Image to Prompt</span></button>
+            <button type="button" onclick="openPluginFrame('qrcode')" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-zinc-900 text-left text-zinc-200"><i class="fa-solid fa-qrcode text-zinc-400"></i> <span>Text to QR Code</span></button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="fixed bottom-24 left-4 px-4 py-2.5 rounded-xl bg-black/90 border border-zinc-800 flex items-center gap-3 text-xs text-white hidden z-20 shadow-2xl backdrop-blur-sm">
+            <i class="fa-solid fa-circle-notch animate-spin text-blue-500 text-sm"></i> 
+            <span class="neon-text uppercase text-[10px] tracking-widest font-black" id="loadingText">MENGANALISA...</span>
+        </div>
+    </main>
+
+    <!-- Footer Input Bar -->
+    <div class="floating-footer">
+        <div class="w-full max-w-4xl mx-auto flex flex-col gap-2 relative">
+            <footer class="glass-panel w-full p-2 rounded-[22px] border border-zinc-800/80 bg-black/80 shadow-2xl neon-glow">
+                <div class="flex gap-1.5 items-center">
+                    <button type="button" id="attachBtn" class="text-zinc-400 hover:text-white w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-900 bg-black/50 shrink-0 transition-all active:scale-90"><i class="fa-solid fa-layer-group text-sm"></i></button>
+                    <div class="flex-1 bg-black/70 rounded-xl border border-zinc-800 flex items-center px-4 focus-within:border-zinc-500 focus-within:shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all h-12">
+                        <input type="text" id="userInput" autocomplete="off" placeholder="Tanya sesuatu ke GASIMA..." class="w-full py-2 text-xs text-white bg-transparent focus:outline-none placeholder-zinc-600 font-medium tracking-wide">
+                    </div>
+                    <button type="button" id="submitMsgBtn" class="bg-white text-black w-12 h-12 rounded-xl flex items-center justify-center active:scale-90 transition-all shrink-0 font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)]"><i class="fa-solid fa-paper-plane text-sm"></i></button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. PRELOADER & AUDIO ENGINE
+        // ==========================================
+        const preloader = document.getElementById('preloader');
+        const preloadProgress = document.getElementById('preload-progress');
+        const duration = 2000;
+        const startTime = Date.now();
+        
+        const progressInterval = setInterval(() => {
+            const elapsedTime = Date.now() - startTime;
+            let progress = Math.min((elapsedTime / duration) * 100, 100);
+            if (preloadProgress) preloadProgress.style.width = `${progress}%`;
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+                if (preloader) {
+                    preloader.classList.add('opacity-0');
+                    setTimeout(() => { preloader.classList.add('hidden'); }, 700);
+                }
+            }
+        }, 30);
+
+        const audioPlaylist = ['sound1.mp3', 'sound2.mp3', 'sound3.mp3'];
+        let currentTrackIndex = 0;
+        const globalAudioLoop = new Audio();
+        globalAudioLoop.volume = 0.20;
+
+        function initAudioEngine() {
+            globalAudioLoop.src = audioPlaylist[currentTrackIndex];
+            globalAudioLoop.addEventListener('ended', () => {
+                currentTrackIndex = (currentTrackIndex + 1) % audioPlaylist.length;
+                globalAudioLoop.src = audioPlaylist[currentTrackIndex];
+                if (!globalAudioLoop.paused) globalAudioLoop.play().catch(e => {});
+            });
+        }
+
+        function toggleAudioPlay() {
+            const icon = document.getElementById('bgmIcon');
+            const text = document.getElementById('bgmStatusText');
+            const vis = document.getElementById('visualizer');
+
+            if (globalAudioLoop.paused) {
+                globalAudioLoop.play().then(() => {
+                    if (icon) icon.className = 'fa-solid fa-pause text-white';
+                    if (text) text.innerText = 'BGM PLAY';
+                    if (vis) vis.classList.add('playing');
+                }).catch(e => {});
+            } else {
+                globalAudioLoop.pause();
+                if (icon) icon.className = 'fa-solid fa-play text-white';
+                if (text) text.innerText = 'BGM PAUSE';
+                if (vis) vis.classList.remove('playing');
+            }
+        }
+
+        function autoStartAudioOnInteraction() {
+            if (globalAudioLoop.paused) {
+                globalAudioLoop.play().then(() => {
+                    const icon = document.getElementById('bgmIcon');
+                    const text = document.getElementById('bgmStatusText');
+                    const vis = document.getElementById('visualizer');
+                    if (icon) icon.className = 'fa-solid fa-pause text-white';
+                    if (text) text.innerText = 'BGM PLAY';
+                    if (vis) vis.classList.add('playing');
+                }).catch(e => {});
+            }
+        }
+
+        window.addEventListener('click', autoStartAudioOnInteraction, { once: true });
+        window.addEventListener('touchstart', autoStartAudioOnInteraction, { once: true });
+        initAudioEngine();
+
+        // ==========================================
+        // 2. SCROLL CONTROLS
+        // ==========================================
+        function scrollToTop() { document.getElementById('chatContainer').scrollTo({ top: 0, behavior: 'smooth' }); }
+        function scrollToBottom() { document.getElementById('chatContainer').scrollTo({ top: document.getElementById('chatContainer').scrollHeight, behavior: 'smooth' }); }
+
+        // ==========================================
+        // 3. UI TOGGLES & MODALS
+        // ==========================================
+        const dashboardMenuBtn = document.getElementById('dashboardMenuBtn');
+        const dashboardDropdown = document.getElementById('dashboardDropdown');
+        const attachBtn = document.getElementById('attachBtn');
+        const attachMenu = document.getElementById('attachMenu');
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const submitMsgBtn = document.getElementById('submitMsgBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const loadingText = document.getElementById('loadingText');
+
+        dashboardMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); dashboardDropdown.classList.toggle('hidden'); attachMenu.classList.add('hidden'); });
+        attachBtn.addEventListener('click', (e) => { e.stopPropagation(); attachMenu.classList.toggle('hidden'); dashboardDropdown.classList.add('hidden'); });
+        document.addEventListener('click', (e) => {
+            if (!dashboardMenuBtn.contains(e.target) && !dashboardDropdown.contains(e.target)) dashboardDropdown.classList.add('hidden');
+            if (!attachBtn.contains(e.target) && !attachMenu.contains(e.target)) attachMenu.classList.add('hidden');
+        });
+
+        function openDiscordFrame() { document.getElementById('discordFrameModal').classList.remove('hidden'); dashboardDropdown.classList.add('hidden'); }
+        function closeDiscordFrame() { document.getElementById('discordFrameModal').classList.add('hidden'); }
+        function copyDiscordId() {
+            copyToClipboardDirect('ikiyxsdd');
+            alert('ID Discord GASIMA berhasil disalin!');
+        }
+
+        function openDonateModal() { document.getElementById('donateModal').classList.remove('hidden'); dashboardDropdown.classList.add('hidden'); }
+        function closeDonateModal() { document.getElementById('donateModal').classList.add('hidden'); }
+
+        // ==========================================
+        // 4. AI MODEL FRAME SELECTOR
+        // ==========================================
+        let selectedAIModel = 'asisten'; 
+        const availableModels = [
+            { id: 'asisten', name: 'ASISTEN.2' },
+            { id: 'oxdian', name: 'OXDIAN.0.2' },
+            { id: 'moci', name: 'MOCI.2.4' },
+            { id: 'opusigs', name: 'OPUSIGS.0.1' },
+            { id: 'publicigs', name: 'PUBLICIGS.0.4' },
+            { id: 'gemma', name: 'GEMMA.5.2' },
+            { id: 'ordo', name: 'ORDO.9.1' },
+            { id: 'orion', name: 'ORION.9.1' }
+        ];
+
+        function renderModelOptions() {
+            const container = document.getElementById('modelOptionsContainer');
+            container.innerHTML = '';
+            availableModels.forEach(m => {
+                const isSelected = m.id === selectedAIModel;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-white text-black border-white shadow-md' : 'bg-black/60 text-zinc-300 border-zinc-800 hover:border-zinc-600'}`;
+                btn.innerHTML = `<span>${m.name}</span> ${isSelected ? '<i class="fa-solid fa-circle-check text-black"></i>' : '<i class="fa-regular fa-circle text-zinc-600"></i>'}`;
+                btn.onclick = () => {
+                    selectedAIModel = m.id;
+                    document.getElementById('currentModelLabel').innerText = m.name;
+                    closeModelFrame();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function openModelFrame() { renderModelOptions(); document.getElementById('modelFrameModal').classList.remove('hidden'); }
+        function closeModelFrame() { document.getElementById('modelFrameModal').classList.add('hidden'); }
+
+        // ==========================================
+        // 5. SESSION MANAGEMENT & ANTI-AMNESIA
+        // ==========================================
+        let chatSessions = JSON.parse(localStorage.getItem('gasima_chat_sessions')) || {};
+        let activeSessionId = localStorage.getItem('gasima_active_session_id') || '';
+
+        function initSessions() {
+            if (Object.keys(chatSessions).length === 0) {
+                const defaultId = 'sess_' + Date.now();
+                chatSessions[defaultId] = { title: "Obrolan Utama", memory: [] };
+                activeSessionId = defaultId;
+                saveSessions();
+            }
+            renderSessionList();
+            loadActiveChat();
+        }
+
+        function saveSessions() {
+            localStorage.setItem('gasima_chat_sessions', JSON.stringify(chatSessions));
+            localStorage.setItem('gasima_active_session_id', activeSessionId);
+        }
+
+        function renderSessionList() {
+            const list = document.getElementById('sessionChatList');
+            if (!list) return;
+            list.innerHTML = '';
+            
+            const sessionIds = Object.keys(chatSessions).reverse();
+            if (sessionIds.length === 0) {
+                list.innerHTML = `<div class="text-[9px] text-zinc-500 italic px-2">Tidak ada riwayat obrolan</div>`;
+                return;
+            }
+
+            sessionIds.forEach(id => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center justify-between gap-1 w-full';
+
+                const btn = document.createElement('button');
+                btn.className = `flex-1 text-left px-2.5 py-1.5 rounded-xl text-[10px] truncate transition-all ${id === activeSessionId ? 'bg-zinc-800 border border-zinc-700 text-white font-bold' : 'text-zinc-400 hover:bg-zinc-900'}`;
+                btn.innerHTML = `<i class="fa-solid fa-message mr-1.5 opacity-70"></i> ${chatSessions[id].title}`;
+                btn.onclick = () => { activeSessionId = id; saveSessions(); renderSessionList(); loadActiveChat(); dashboardDropdown.classList.add('hidden'); };
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'text-zinc-600 hover:text-rose-400 p-1.5 transition-colors text-[10px]';
+                delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteSingleSession(id);
+                };
+
+                wrapper.appendChild(btn);
+                wrapper.appendChild(delBtn);
+                list.appendChild(wrapper);
+            });
+        }
+
+        function createNewChatSession() {
+            const newId = 'sess_' + Date.now();
+            chatSessions[newId] = { title: `Chat #${Object.keys(chatSessions).length + 1}`, memory: [] };
+            activeSessionId = newId;
+            saveSessions();
+            renderSessionList();
+            loadActiveChat();
+            dashboardDropdown.classList.add('hidden');
+        }
+
+        function clearCurrentChat() {
+            if(chatSessions[activeSessionId]) {
+                chatSessions[activeSessionId].memory = [];
+                saveSessions();
+                loadActiveChat();
+            }
+            dashboardDropdown.classList.add('hidden');
+        }
+
+        function deleteSingleSession(id) {
+            delete chatSessions[id];
+            const keys = Object.keys(chatSessions);
+            if (keys.length === 0) {
+                createNewChatSession();
+            } else {
+                if (activeSessionId === id) activeSessionId = keys[0];
+                saveSessions();
+                renderSessionList();
+                loadActiveChat();
+            }
+        }
+
+        function clearAllChatSessions() {
+            if (confirm("Hapus seluruh riwayat obrolan?")) {
+                chatSessions = {};
+                createNewChatSession();
+            }
+        }
+
+        function buildConversationHistory(currentPrompt) {
+            const memory = chatSessions[activeSessionId]?.memory || [];
+            let formattedContext = "Riwayat Percakapan Sebelumnya:\n";
+            
+            const recentMemory = memory.slice(-8); 
+            recentMemory.forEach(msg => {
+                const role = msg.isUser ? "User" : "AI";
+                const cleanText = msg.text.replace(/<[^>]*>?/gm, ''); 
+                formattedContext += `${role}: ${cleanText}\n`;
+            });
+            
+            formattedContext += `\nUser Baru: ${currentPrompt}\nRespons AI:`;
+            return formattedContext;
+        }
+
+        // ==========================================
+        // 6. UTILITY CLIPBOARD & SCRIPT FORMATTER
+        // ==========================================
+        function copyToClipboardDirect(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).catch(() => fallbackCopyTextToClipboard(text));
+            } else {
+                fallbackCopyTextToClipboard(text);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try { document.execCommand('copy'); } catch (err) {}
+            document.body.removeChild(textArea);
+        }
+
+        function copyCodeElement(btn) {
+            const container = btn.closest('.code-box-container');
+            const preElement = container ? container.querySelector('code') : null;
+            if (preElement) {
+                const codeText = preElement.innerText;
+                copyToClipboardDirect(codeText);
+                btn.innerHTML = `<i class="fa-solid fa-check text-green-400"></i> TERDISALIN!`;
+                setTimeout(() => {
+                    btn.innerHTML = `<i class="fa-solid fa-copy"></i> SALIN SKRIP`;
+                }, 2000);
+            }
+        }
+
+        function formatScriptResponse(text) {
+            const codeBlockRegex = /```(?:[a-zA-Z]*)\n([\s\S]*?)```/g;
+            if (codeBlockRegex.test(text)) {
+                return text.replace(/```(?:[a-zA-Z]*)\n([\s\S]*?)```/g, (match, codeText) => {
+                    const escapedCode = String(codeText).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    return `
+                        <div class="bg-[#0b0e14] border border-zinc-700 rounded-2xl overflow-hidden my-3 shadow-xl code-box-container">
+                            <div class="bg-black/90 border-b border-zinc-800 px-3.5 py-2 flex justify-between items-center text-[10px] text-zinc-400 font-mono font-bold">
+                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-code text-blue-400"></i> SKRIP SIAP SALIN</span>
+                                <button onclick="copyCodeElement(this)" class="hover:text-white bg-zinc-900 border border-zinc-700 px-3 py-1 rounded-lg transition-all active:scale-95 text-zinc-200 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-copy"></i> SALIN SKRIP
+                                </button>
+                            </div>
+                            <pre class="p-4 text-[11px] overflow-x-auto text-green-300 font-mono leading-relaxed select-all"><code>${escapedCode}</code></pre>
+                        </div>`;
+                });
+            }
+            return String(text).replace(/\n/g, '<br>');
+        }
+
+        // ==========================================
+        // 7. CHAT DISPLAY ENGINE
+        // ==========================================
+        function loadActiveChat() {
+            chatContainer.innerHTML = '';
+            appendMsgUI(`<p class="font-black text-white mb-1.5 tracking-widest flex items-center gap-2 uppercase text-[9px] neon-text"><img src="pfp1.jpeg" class="w-4 h-4 rounded-full object-cover"> SYSTEM ONLINE</p>Halo Bos, gue GASIMA AI Cyber System. Ada yang bisa gue bantu hari ini? Semua model AI sudah di-optimize & fixed total!`, false, true);
+            
+            const memory = chatSessions[activeSessionId]?.memory || [];
+            memory.forEach(m => {
+                appendMsgUI(m.text, m.isUser, true);
+            });
+        }
+
+        function appendMsgUI(content, isUser = false, skipSave = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = isUser ? 'flex justify-end w-full' : 'flex justify-start w-full';
+            
+            const bubble = document.createElement('div');
+            bubble.className = isUser 
+                ? 'bg-gradient-to-br from-zinc-800 via-zinc-900 to-black text-white rounded-[24px] rounded-tr-none p-4 max-w-[85%] text-xs border border-zinc-700 shadow-md font-medium' 
+                : 'bg-black/80 backdrop-blur-md text-zinc-200 p-4 max-w-[92%] text-xs rounded-[24px] rounded-tl-none border border-zinc-800 relative shadow-lg overflow-hidden';
+            
+            if (!isUser && !String(content).includes('SYSTEM ONLINE')) {
+                const header = document.createElement('div');
+                header.className = 'flex justify-between items-center mb-2 gap-4 border-b border-zinc-800/80 pb-2';
+                header.innerHTML = `<p class="font-black text-white tracking-widest text-[9px] uppercase neon-text flex items-center gap-1.5"><img src="pfp1.jpeg" class="w-4 h-4 rounded-full object-cover border border-white/20"> GASIMA RESPONSE</p>`;
+                bubble.appendChild(header);
+            }
+            
+            const msgBody = document.createElement('div');
+            msgBody.className = 'w-full overflow-hidden break-words leading-relaxed';
+            
+            if (typeof content === 'string' && (content.includes('<div') || content.includes('<img') || content.includes('<p class='))) {
+                msgBody.innerHTML = content;
+            } else {
+                msgBody.innerHTML = formatScriptResponse(content);
+            }
+            
+            bubble.appendChild(msgBody);
+            wrapper.appendChild(bubble);
+            chatContainer.appendChild(wrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            if (!skipSave) {
+                chatSessions[activeSessionId].memory.push({ text: content, isUser });
+                if (isUser && chatSessions[activeSessionId].memory.filter(m => m.isUser).length === 1) {
+                    chatSessions[activeSessionId].title = content.substring(0, 15) + '...';
+                    renderSessionList();
+                }
+                saveSessions();
+            }
+        }
+
+        // ==========================================
+        // 8. PLUGIN MODALS CONTROLLER
+        // ==========================================
+        const pluginFrameModal = document.getElementById('pluginFrameModal');
+        const pluginInputsContainer = document.getElementById('pluginInputsContainer');
+        const pluginModalTitle = document.getElementById('pluginModalTitle');
+        let activePluginMode = null;
+
+        function openPluginFrame(mode) {
+            activePluginMode = mode;
+            attachMenu.classList.add('hidden');
+            pluginInputsContainer.innerHTML = '';
+            
+            let title = '';
+            if (mode === 'fix_code') {
+                title = 'Auto Fix Code';
+                pluginInputsContainer.innerHTML = `
+                    <label class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Paste Kode Error:</label>
+                    <textarea id="p_code" rows="5" placeholder="Taruh kode bermasalah lo di sini..." class="w-full bg-black border border-zinc-700 rounded-xl p-3 text-xs text-green-400 font-mono focus:border-blue-500 outline-none"></textarea>
+                `;
+            } else if (mode === 'quote_win' || mode === 'quote_bahlil' || mode === 'qrcode') {
+                title = mode.replace('_', ' ').toUpperCase();
+                pluginInputsContainer.innerHTML = `
+                    <label class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Masukkan Teks:</label>
+                    <input type="text" id="p_text" placeholder="Ketik kalimat atau pesan..." class="w-full bg-black border border-zinc-700 rounded-xl p-3 text-xs text-white focus:border-blue-500 outline-none">
+                `;
+            } else if (mode === 'quote_iphone') {
+                title = 'QUOTE iPHONE';
+                pluginInputsContainer.innerHTML = `
+                    <label class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Teks Pesan:</label>
+                    <input type="text" id="p_text" placeholder="Pesan chat..." class="w-full bg-black border border-zinc-700 rounded-xl p-3 text-xs text-white focus:border-blue-500 outline-none mb-2">
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            <label class="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">Jam Chat:</label>
+                            <input type="text" id="p_time1" value="12:00" class="w-full bg-black border border-zinc-700 rounded-xl p-3 text-xs text-white focus:border-blue-500 outline-none">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">Jam Status Bar:</label>
+                            <input type="text" id="p_time2" value="12:00" class="w-full bg-black border border-zinc-700 rounded-xl p-3 text-xs text-white focus:border-blue-500 outline-none">
+                        </div>
+                    </div>
+                `;
+            } else if (mode === 'img2prompt') {
+                title = 'IMAGE TO PROMPT';
+                pluginInputsContainer.innerHTML = `
+                    <div class="bg-blue-900/20 border border-blue-500/30 p-3 rounded-xl mb-2 text-[10px] text-blue-200">
+                        <i class="fa-solid fa-circle-info"></i> Upload gambar untuk diekstrak menjadi deskripsi prompt super detail.
+                    </div>
+                    <label class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Pilih Gambar:</label>
+                    <input type="file" id="p_file" accept="image/*" class="w-full bg-black border border-zinc-700 rounded-xl p-2 text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                `;
+            }
+
+            pluginModalTitle.innerHTML = `<i class="fa-solid fa-plug text-blue-400"></i> ${title}`;
+            pluginFrameModal.classList.remove('hidden');
+        }
+
+        function closePluginFrame() { pluginFrameModal.classList.add('hidden'); }
+
+        // ==========================================
+        // 9. ADVANCED FETCH ENGINE (STRICT TXT2IMG FIX)
+        // ==========================================
+        const _x = (s) => atob(s);
+        const apiMap = {
+            models: {
+                asisten: "https://sylvatica.my.id/api/ai/kuroneko?q={prompt}&session={session}&apikey=sylva-uv5gVc0z",
+                oxdian: "https://sylvatica.my.id/api/ai/feeb?q={prompt}&session={session}&apikey=sylva-uv5gVc0z",
+                moci: "https://sylvatica.my.id/api/ai/qwen3?q={prompt}&apikey=sylva-uv5gVc0z",
+                opusigs: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL2FpL3F1aWxib3Q/cHJvbXB0PQ=="),
+                publicigs: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL2FpL3B1YmxpY2FpP2FwaWtleT1reXp6JnE9"),
+                gemma: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL2FpL2dvb2dsZS1nZW1tYT9zZXNzaW9uSWQ9R0FTSU1BMDEmdGV4dD0="),
+                ordo: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL2FpL2NpY2k/cHJvbXB0PQ=="),
+                orion: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL2FpL2dwdC01LW1pbmk/cXVlc3Rpb249")
+            },
+            plugins: {
+                fix_check: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL2FpL29wZW5haT9hcGlrZXk9a3l6eiZ0ZXh0PQ=="),
+                fix_code: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL3Rvb2xzL2ZpeGVycm9yP2NvZGU9"),
+                quote_win: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL2NhbnZhcy9pcXc/dGV4dD0="),
+                quote_iphone: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL2NhbnZhcy9pcWM/Y2hhdFRpbWU9"),
+                quote_bahlil: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL21ha2VyL2JyYXRiYWhsaWw/dGV4dD0="),
+                img2prompt: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL3Rvb2xzL2ltZzJwcm9tcHQ/dXJsPQ=="),
+                qrcode: _x("aHR0cHM6Ly9hcGkuaWt5eXhkLm15LmlkL3Rvb2xzL3FyY29kZT90ZXh0PQ==")
+            },
+            // OFFICIAL TXT2IMG SYLVATICA API ENDPOINT
+            txt2img: "https://sylvatica.my.id/api/ai/txt2img?prompt={prompt}&ratio=1:1&apikey=sylva-uv5gVc0z"
+        };
+
+        function extractAPIResponse(data) {
+            if (!data) return "Respon kosong dari server.";
+            if (typeof data === 'string') {
+                try {
+                    let parsed = JSON.parse(data);
+                    return extractAPIResponse(parsed);
+                } catch(e) {
+                    return data;
+                }
+            }
+            if (typeof data === 'object') {
+                if (data.result) return extractAPIResponse(data.result);
+                if (data.response) return extractAPIResponse(data.response);
+                if (data.reply) return extractAPIResponse(data.reply);
+                if (data.message) return extractAPIResponse(data.message);
+                if (data.data) return extractAPIResponse(data.data);
+                if (data.answer) return extractAPIResponse(data.answer);
+                if (data.code) return extractAPIResponse(data.code);
+                if (data.text) return extractAPIResponse(data.text);
+                if (data.url) return data.url;
+                if (data.choices && data.choices[0]) {
+                    if (data.choices[0].text) return extractAPIResponse(data.choices[0].text);
+                    if (data.choices[0].message) return extractAPIResponse(data.choices[0].message);
+                }
+            }
+            return JSON.stringify(data);
+        }
+
+        async function fetchSmartAPI(targetUrl) {
+            try {
+                const res = await fetch(targetUrl);
+                if (res.ok) {
+                    const textData = await res.text();
+                    return textData;
+                }
+            } catch (err) {
+                console.warn("Direct fetch blocked or failed. Attempting CORS Proxy Failover...", err);
+            }
+
+            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl);
+            const proxyRes = await fetch(proxyUrl);
+            if (!proxyRes.ok) throw new Error(`HTTP Error Status: ${proxyRes.status}`);
+            return await proxyRes.text();
+        }
+
+        async function downloadDirectImage(imageUrl, fileName = 'GASIMA_Image.png') {
+            try {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                alert("Gambar berhasil diunduh!");
+            } catch (err) {
+                window.open(imageUrl, '_blank');
+            }
+        }
+
+        async function fetchMediaPlugin(url) {
+            try {
+                const res = await fetch(url);
+                if (res.ok) {
+                    const contentType = res.headers.get("content-type") || "";
+                    if (contentType.includes("image") || contentType.includes("octet-stream")) {
+                        const blob = await res.blob();
+                        return URL.createObjectURL(blob);
+                    }
+                    const textData = await res.text();
+                    try {
+                        const json = JSON.parse(textData);
+                        const extracted = extractAPIResponse(json);
+                        if (extracted && (extracted.startsWith("http") || extracted.startsWith("data:") || extracted.startsWith("blob:"))) {
+                            return extracted;
+                        }
+                    } catch (e) {}
+                }
+            } catch(e) {
+                console.warn("Direct blob fetch error, falling back to direct URL", e);
+            }
+            return url;
+        }
+
+        // AUTO DETECTION INTENT GAMBAR SUPER AKURAT
+        function isExplicitImageRequest(text) {
+            const lower = text.toLowerCase().trim();
+            
+            // Abaikan jika user secara eksplisit meminta kodingan
+            if (/(skrip|script|kode|code|python|html|js|javascript|fungsi|function|program|coding)/i.test(lower)) {
+                return false;
+            }
+
+            const imageTriggers = [
+                "gambar", "buatkan gambar", "buat gambar", "lukiskan", "lukis", 
+                "generate image", "buatkan foto", "buat foto", "pemandangan", 
+                "gambar pemandangan", "desain gambar", "gambar dari", "bikin gambar", 
+                "bikinin gambar", "render gambar", "poto", "foto"
+            ];
+            
+            return imageTriggers.some(trigger => lower.includes(trigger));
+        }
+
+        // ==========================================
+        // 10. CORE EXECUTION RUNNERS
+        // ==========================================
+        async function handleNormalChat() {
+            const prompt = userInput.value.trim();
+            if (!prompt) return;
+
+            appendMsgUI(prompt, true);
+            userInput.value = '';
+            loadingIndicator.classList.remove('hidden');
+            loadingText.innerText = "MENGANALISA...";
+            
+            try {
+                // ======================================================
+                // PENANGANAN PENUH AUTOMATIS UNTUK PEMBUATAN GAMBAR (100% FIXED)
+                // ======================================================
+                if (isExplicitImageRequest(prompt)) {
+                    loadingText.innerText = "MENGGAMBAR PRO...";
+                    
+                    // Bersihkan prompt dari awalan penyapa untuk akurasi API
+                    const cleanPrompt = prompt.replace(/(buatkan|buat|bikin|bikinin|generate|lukiskan|lukis|foto|gambar)\s*(saya|gue|aku|kan)?\s*/gi, '').trim() || prompt;
+                    
+                    // Kirim langsung ke Endpoint Txt2Img Sylvatica
+                    const imgApiUrl = apiMap.txt2img.replace('{prompt}', encodeURIComponent(cleanPrompt));
+                    const imageSrc = await fetchMediaPlugin(imgApiUrl);
+                    
+                    const imgReply = `
+                        <p class="text-[10px] mb-1 font-bold text-green-400 flex items-center gap-1.5"><i class="fa-solid fa-palette"></i> Gambar Berhasil Dibuat:</p>
+                        <p class="text-[9px] text-zinc-400 italic mb-2"><b>Prompt:</b> "${cleanPrompt}"</p>
+                        <img src="${imageSrc}" class="rounded-xl w-full max-w-[280px] border border-zinc-700 shadow-lg object-contain mb-2">
+                        <button onclick="downloadDirectImage('${imageSrc}')" class="w-full bg-white text-black text-[10px] font-black tracking-widest px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 uppercase shadow-md active:scale-95 transition-all">
+                            <i class="fa-solid fa-download"></i> Simpan Ke Galeri
+                        </button>`;
+                    appendMsgUI(imgReply, false);
+                    return;
+                }
+
+                // PENANGANAN CHAT TEKS NORMAL
+                let fullContextPrompt = buildConversationHistory(prompt);
+                let targetUrl = "";
+
+                if (selectedAIModel === 'asisten' || selectedAIModel === 'oxdian') {
+                    targetUrl = apiMap.models[selectedAIModel]
+                                .replace('{prompt}', encodeURIComponent(fullContextPrompt))
+                                .replace('{session}', activeSessionId);
+                } else if (selectedAIModel === 'moci') {
+                    targetUrl = apiMap.models[selectedAIModel].replace('{prompt}', encodeURIComponent(fullContextPrompt));
+                } else {
+                    targetUrl = apiMap.models[selectedAIModel] + encodeURIComponent(fullContextPrompt);
+                }
+                
+                const responseRaw = await fetchSmartAPI(targetUrl);
+                let parsedData;
+                try { parsedData = JSON.parse(responseRaw); } catch(e) { parsedData = responseRaw; }
+                
+                let finalReply = extractAPIResponse(parsedData);
+                if (!finalReply || finalReply.trim() === "") {
+                    finalReply = "Maaf Bos, server AI memberikan respon kosong.";
+                }
+                appendMsgUI(finalReply, false);
+
+            } catch (err) {
+                console.error(err);
+                appendMsgUI(`<span class="text-red-400 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> KONEKSI ERROR</span><br>Gagal terhubung ke endpoint API. Silakan coba lagi.`, false);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        async function executePluginModal() {
+            const currentMode = activePluginMode;
+            if (!currentMode) return;
+            
+            closePluginFrame();
+            loadingIndicator.classList.remove('hidden');
+            
+            try {
+                let finalReply = '';
+
+                if (currentMode === 'fix_code') {
+                    const codeInput = document.getElementById('p_code')?.value.trim();
+                    if(!codeInput) throw new Error("Kode program masih kosong.");
+                    appendMsgUI(`*Menjalankan Auto Fix Code...*`, true);
+                    
+                    loadingText.innerText = "CHECKING ERROR...";
+                    const checkRaw = await fetchSmartAPI(apiMap.plugins.fix_check + encodeURIComponent("Deteksi error: " + codeInput));
+                    const analysis = extractAPIResponse(checkRaw);
+
+                    loadingText.innerText = "REBUILDING CODE...";
+                    const fixRaw = await fetchSmartAPI(apiMap.plugins.fix_code + encodeURIComponent(codeInput));
+                    const fixedCodeText = extractAPIResponse(fixRaw);
+                    
+                    finalReply = `
+                        <div class="mb-3 text-[11px] text-zinc-300 leading-relaxed border-l-2 border-blue-500 pl-2"><b>Hasil Analisa Bug:</b><br>${analysis}</div>
+                        <div class="bg-[#0d1117] border border-zinc-700 rounded-xl overflow-hidden mt-2 shadow-inner code-box-container">
+                            <div class="bg-black border-b border-zinc-800 px-3 py-2 flex justify-between items-center text-[10px] text-zinc-400 font-mono font-bold">
+                                <span><i class="fa-solid fa-code text-green-400 mr-1"></i> KODE DIPERBAIKI</span>
+                                <button onclick="copyCodeElement(this)" class="hover:text-white bg-zinc-900 px-2.5 py-1 rounded border border-zinc-700 transition-all active:scale-90 flex items-center gap-1"><i class="fa-solid fa-copy"></i> SALIN SKRIP</button>
+                            </div>
+                            <pre class="p-4 text-[11px] overflow-x-auto text-green-300 font-mono leading-relaxed select-all"><code>${String(fixedCodeText).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>
+                        </div>`;
+                }
+                else if (currentMode === 'img2prompt') {
+                    const fileInput = document.getElementById('p_file');
+                    if (!fileInput || !fileInput.files.length) throw new Error("Pilih file gambar terlebih dahulu.");
+                    appendMsgUI(`*Mengekstrak gambar menjadi Prompt...*`, true);
+                    
+                    loadingText.innerText = "UPLOADING IMG...";
+                    const formData = new FormData();
+                    formData.append('reqtype', 'fileupload');
+                    formData.append('fileToUpload', fileInput.files[0]);
+                    
+                    const uploadRes = await fetch('https://litterbox.catbox.moe/user/api.php', { method: 'POST', body: formData });
+                    const fileUrl = await uploadRes.text();
+                    
+                    loadingText.innerText = "EXTRACTING PROMPT...";
+                    const promptRaw = await fetchSmartAPI(apiMap.plugins.img2prompt + encodeURIComponent(fileUrl));
+                    const promptResult = extractAPIResponse(promptRaw);
+                    
+                    finalReply = `<b>Hasil Extract Prompt:</b><br><div class="bg-zinc-900 p-3 rounded-lg border border-zinc-700 mt-2 text-green-300 font-mono text-[10px] select-all">${promptResult}</div>`;
+                }
+                else {
+                    const textInput = document.getElementById('p_text')?.value.trim();
+                    if(!textInput) throw new Error("Teks input masih kosong.");
+                    appendMsgUI(`*Generate Media: ${currentMode.toUpperCase()}...*`, true);
+                    
+                    loadingText.innerText = "RENDERING MEDIA...";
+                    let targetUrl = '';
+                    
+                    if (currentMode === 'quote_win') {
+                        targetUrl = apiMap.plugins.quote_win + encodeURIComponent(textInput);
+                    } else if (currentMode === 'quote_bahlil') {
+                        targetUrl = apiMap.plugins.quote_bahlil + encodeURIComponent(textInput);
+                    } else if (currentMode === 'qrcode') {
+                        targetUrl = apiMap.plugins.qrcode + encodeURIComponent(textInput);
+                    } else if (currentMode === 'quote_iphone') {
+                        const t1 = document.getElementById('p_time1')?.value || '12:00';
+                        const t2 = document.getElementById('p_time2')?.value || '12:00';
+                        targetUrl = `${apiMap.plugins.quote_iphone}${encodeURIComponent(t1)}&statusBarTime=${encodeURIComponent(t2)}&text=${encodeURIComponent(textInput)}`;
+                    }
+
+                    const finalImageSource = await fetchMediaPlugin(targetUrl);
+
+                    if (finalImageSource) {
+                        finalReply = `
+                            <p class="text-[10px] mb-2 font-bold text-green-400"><i class="fa-solid fa-circle-check"></i> Media berhasil di-render.</p>
+                            <img src="${finalImageSource}" class="rounded-xl w-full max-w-[280px] border border-zinc-700 shadow-lg object-contain mb-2">
+                            <button onclick="downloadDirectImage('${finalImageSource}')" class="w-full bg-white text-black text-[10px] font-black tracking-widest px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 uppercase shadow-md active:scale-95 transition-all">
+                                <i class="fa-solid fa-download"></i> Simpan Ke Galeri
+                            </button>`;
+                    } else {
+                        throw new Error("Gagal mengambil buffer gambar dari server.");
+                    }
+                }
+
+                appendMsgUI(finalReply, false);
+            } catch (err) {
+                console.error(err);
+                appendMsgUI(`<span class="text-red-400 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> EKSEKUSI GAGAL</span><br>Error sistem plugin: ${err.message}`, false);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                activePluginMode = null;
+            }
+        }
+
+        submitMsgBtn.addEventListener('click', handleNormalChat);
+        userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleNormalChat(); } });
+
+        window.onload = initSessions;
+    </script>
+</body>
+</html>
